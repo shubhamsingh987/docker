@@ -1,0 +1,50 @@
+
+# install buildpacks tasks
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/master/task/buildpacks/0.3/buildpacks.yaml
+
+# buildpack install
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/master/task/buildpacks/0.3/buildpacks.yaml
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/master/task/git-clone/0.4/git-clone.yaml
+
+
+#tekton install
+kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.5/git-clone.yaml
+
+# tekton dahboard
+kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+kubectl apply --filename https://storage.googleapis.com/tekton-releases/dashboard/latest/tekton-dashboard-release.yaml
+kubectl proxy 
+http://localhost:8001/api/v1/namespaces/tekton-pipelines/services/tekton-dashboard:http/proxy/#/pipelineruns
+
+# argo cd install
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl -n argocd patch secret argocd-secret -p '{"stringData": { "admin.password": "$2a$10$VfWT7ScZBPzIzqVnuAaINO2rCNb7T4I.vh5t3KN0J3iYUjxYEgmFq",  "admin.passwordMtime": $(date  }}'
+
+# run argo cd
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+wget https://github.com/argoproj/argo-cd/releases
+argocd login localhost:8080
+
+
+#secret
+kubectl create secret docker-registry docker-user-pass --docker-server=https://index.docker.io/v1/   --docker-username=shubhamsingh987   --docker-password=Awesome123 --docker-email=singh.shubham987@gmail.com
+# dahboard
+minikube dashboard
+
+# dockerhub
+docker tag test shubhamsingh/test:v4
+docker push shubhamsingh/test:v4
+
+# python build
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/python-coverage/0.1/python-coverage.yaml
+
+
+
+#cleanup
+kubectl delete --all pods --namespace default
+kubectl delete clusterrolebinding kubernetes-dashboard
+kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io config.webhook.pipeline.tekton.dev
+kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io validation.webhook.pipeline.tekton.dev
+kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io webhook.pipeline.tekton.dev
