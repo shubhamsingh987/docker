@@ -1,0 +1,20 @@
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+choco install minikube wget curl argocd-cli
+kubectl config use-context argocd-k8s
+minikube start -p argocd-k8s
+minikube start -p target-k8s  --force
+minikube profile target-k8s
+minikube dashboard
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+timeout 30
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+localhost:8080
+curl https://raw.githubusercontent.com/shubhamsingh987/docker/main/cred.txt -o cred.json
+kubectl -n argocd patch secret argocd-secret --patch-file .\cred.json
+argocd login localhost:8080 --insecure --username admin --password admin
+argocd app create guestbook --repo https://github.com/argoproj/argocd-example-apps.git --path guestbook --dest-server https://kubernetes.default.svc --dest-namespace default
+argocd app sync guestbook
+kubectl get service -n default  
+kubectl port-forward svc/guestbook-ui -n default 9090:80 
+localhost:9090

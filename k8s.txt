@@ -1,6 +1,18 @@
+# minkube
+kubectl config use-context argocd-k8s
+minikube start -p argocd-k8s
+minikube start -p target-k8s  --force
+minikube profile target-k8s
+minikube dashboard
 
-# install buildpacks tasks
+
+# setup
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+choco install base64 minikube pack
+
+# install tasks
 kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/master/task/buildpacks/0.3/buildpacks.yaml
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/argocd-task-sync-and-wait/0.1/argocd-task-sync-and-wait.yaml
 
 # buildpack install
 kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/master/task/buildpacks/0.3/buildpacks.yaml
@@ -20,12 +32,17 @@ http://localhost:8001/api/v1/namespaces/tekton-pipelines/services/tekton-dashboa
 # argo cd install
 kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-kubectl -n argocd patch secret argocd-secret -p '{"stringData": { "admin.password": "$2a$10$VfWT7ScZBPzIzqVnuAaINO2rCNb7T4I.vh5t3KN0J3iYUjxYEgmFq",  "admin.passwordMtime": $(date  }}'
 
 # run argo cd
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 wget https://github.com/argoproj/argo-cd/releases
-argocd login localhost:8080
+kubectl -n argocd patch secret argocd-secret --patch-file .\cred.json
+cred.json
+  {"stringData": {
+    "admin.password": "$2a$10$HzZO7UAGN56vABmkuT4Hyebbu1Rl225hpLf9Ptxd328XcKHVmVS6i",
+    "admin.passwordMtime": "'$(date +%FT%T%Z)'"
+  }}
+argocd login localhost:8080 --insecure --username admin --password admin
 
 
 #secret
@@ -40,9 +57,12 @@ docker push shubhamsingh/test:v4
 # python build
 kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/python-coverage/0.1/python-coverage.yaml
 
-
+# argoc create app
+# get ip gor external cluster minikube ip -p target-k8s
+argocd app create guestbook --repo https://github.com/argoproj/argocd-example-apps.git --path guestbook --dest-server https://kubernetes.default.svc --dest-namespace default`
 
 #cleanup
+kubectl delete ns argocd
 kubectl delete --all pods --namespace default
 kubectl delete clusterrolebinding kubernetes-dashboard
 kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io config.webhook.pipeline.tekton.dev
