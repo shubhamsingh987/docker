@@ -1,0 +1,4 @@
+  {"stringData": {
+    "admin.password": "$2a$10$HzZO7UAGN56vABmkuT4Hyebbu1Rl225hpLf9Ptxd328XcKHVmVS6i",
+    "admin.passwordMtime": "'$(date +%FT%T%Z)'"
+  }}
