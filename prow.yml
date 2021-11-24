@@ -1,0 +1,2 @@
+- name: prow-github-actions
+  uses: jpmcb/prow-github-actions@v1.1.3
